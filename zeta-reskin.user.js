@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zeta Desktop Skin
 // @namespace    zeta-desktop-skin
-// @version      0.5.0
+// @version      0.6.0
 // @description  Turns zeta-ai.io's phone-width view into a full-width desktop layout: nav rail, wide pages, adjustable text size, quiet Three.js background.
 // @match        https://zeta-ai.io/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
@@ -14,7 +14,8 @@
 /* Layout (window 1100px wide or more):  nav rail | Zeta's page, widened
  *  - Zeta's own nav buttons are moved into a fixed rail on the left; they work as normal.
  *  - Card feeds wrap several rows side by side instead of 2 cards per row.
- *  - Chat pages keep a ~760px reading column, centred.
+ *  - Inside a chat: a ~820px reading column, message box to match, images capped, grey accents,
+ *    and a stand-in rail (Zeta hides its nav there). The chat list remembers its scroll position.
  *  - Text size: 100 / 115 / 130 / 145 %, saved per browser.
  *  - Neutral grey/black palette. Three.js background of slow grey particles.
  *  - Effects: Full / Calm (30fps, slower) / Off. Pauses when the tab is hidden.
@@ -85,10 +86,16 @@
   html.zs-wide div:has(> a[href*="/plots/"]):hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.12); }
 
   /* chat pages: one readable column in the middle of the wide panel */
-  html.zs-wide.zs-room #contents .overflow-y-auto > *,
-  html.zs-wide.zs-room #contents form,
-  html.zs-wide.zs-room #contents textarea { max-width: 760px; margin-inline: auto; width: 100%; box-sizing: border-box; }
+  html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
+  html.zs-wide.zs-room [data-zs-composer] { max-width: 820px; margin-inline: auto !important; width: 100%; box-sizing: border-box; }
   html.zs-wide.zs-room #contents { line-height: 1.6; }
+  html.zs-wide.zs-room #contents .overflow-y-auto img:not([class*="rounded-full"]) {
+    max-height: 62vh; width: auto !important; max-width: 100%; object-fit: contain; border-radius: 12px; margin-inline: auto;
+  }
+  html.zs-wide.zs-room [data-zs-composer] { margin-bottom: 12px !important; }
+  html.zs-wide.zs-room [data-zs-composer] textarea, html.zs-wide.zs-room [data-zs-composer] input { color: var(--zs-text); }
+  /* Zeta's purple accents (your message bubbles, send button) in neutral grey */
+  html.zs-wide [data-zs-accent] { background-color: #3a3a3c !important; border-color: #4a4a4d !important; color: var(--zs-text) !important; }
 
   /* the rail: Zeta's nav row, pinned to the left */
   html.zs-wide [data-zs-navwrap] { height: 0 !important; min-height: 0 !important; margin: 0 !important; }
@@ -116,6 +123,18 @@
   html.zs-wide #portal-container > .z-30 { inset: 0 !important; }
   html.zs-wide #portal-container > .z-30 > * { max-width: min(480px, 92vw); max-height: 92vh; }
   html.zs-wide #portal-container > .z-30 img { max-height: 70vh; width: auto; max-width: 100%; object-fit: contain; }
+
+  /* stand-in rail for pages where Zeta hides its nav (inside a chat) */
+  #zs-rail-fallback { display: none; }
+  html.zs-wide.zs-norail #zs-rail-fallback {
+    display: flex; flex-direction: column; gap: 2px; position: fixed; left: ${GAP}px; top: ${GAP}px; bottom: ${GAP}px; width: ${RAIL}px;
+    background: var(--zs-panel); border: 1px solid var(--zs-line); border-radius: 14px; padding: 76px 12px 120px; box-sizing: border-box; z-index: 5;
+    font: 14.5px/1.2 "Pretendard Variable", system-ui, sans-serif;
+  }
+  #zs-rail-fallback .zs-logo { position: absolute; top: 20px; left: 24px; font: 700 28px/1 "Pretendard Variable", system-ui, sans-serif; letter-spacing: -.03em; color: var(--zs-text); }
+  #zs-rail-fallback a { color: var(--zs-muted); text-decoration: none; padding: 12px; border-radius: 10px; display: flex; gap: 12px; align-items: center; }
+  #zs-rail-fallback a:hover { background: var(--zs-raised); color: var(--zs-text); }
+  #zs-rail-fallback a:focus-visible { outline: 2px solid var(--zs-text); outline-offset: 1px; }
 
   /* rail controls */
   #zs-controls { display: none; }
@@ -204,12 +223,15 @@
       gl_FragColor = vec4(vec3(.6), band*(.025+.03*w)); }` }));
   haze.position.set(0, 2, -45); haze.rotation.x = -.2; scene.add(haze);
 
-  let wide = false;
+  let wide = false, sizedW = 0, sizedH = 0;
   function layout() {
     wide = innerWidth >= 1100;
     root.classList.toggle("zs-wide", wide);
+    if (innerWidth === sizedW && innerHeight === sizedH) return;   // resizing clears the canvas, so only when needed
+    sizedW = innerWidth; sizedH = innerHeight;
     R.setSize(innerWidth, innerHeight, false);
     cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
+    if (fx === "off") draw(performance.now());
   }
   addEventListener("resize", layout);
 
@@ -243,13 +265,60 @@
       row.setAttribute("data-zs-row", ""); feed.setAttribute("data-zs-feed", "");
     });
   }
+  /* stand-in rail: Zeta drops its nav inside a chat, so offer the way back */
+  const fallback = document.createElement("nav"); fallback.id = "zs-rail-fallback"; fallback.setAttribute("aria-label", "Main");
+  fallback.innerHTML = `<span class="zs-logo">zeta</span><a href="/en/rooms" data-go>← All chats</a><a href="/en" data-go>Home</a>`;
+  fallback.addEventListener("click", e => {
+    const a = e.target.closest("a[data-go]"); if (!a) return;
+    const router = window.next && window.next.router;   // stay inside Zeta's app instead of a full reload
+    if (router && router.push) { e.preventDefault(); router.push(a.getAttribute("href")); }
+  });
+  root.appendChild(fallback);
+
+  // inside a chat: the message box and Zeta's purple accents
+  function tagRoom() {
+    const box = document.querySelector("#contents textarea");
+    root.classList.toggle("zs-room", !!box);
+    if (!box) return;
+    const panelW = document.getElementById("contents").getBoundingClientRect().width;
+    let el = box;
+    while (el.parentElement && el.parentElement.id !== "contents" && el.parentElement.getBoundingClientRect().width < panelW - 8) el = el.parentElement;
+    if (!el.hasAttribute("data-zs-composer")) {
+      document.querySelectorAll("[data-zs-composer]").forEach(x => x.removeAttribute("data-zs-composer"));
+      el.setAttribute("data-zs-composer", "");
+    }
+    document.querySelectorAll("#contents [class*='bg-']:not([data-zs-accent])").forEach(x => {
+      const m = getComputedStyle(x).backgroundColor.match(/\d+(\.\d+)?/g); if (!m) return;
+      const [r, g, b] = m.map(Number);
+      if (b > 150 && r > 60 && g < 120 && b - g > 70) x.setAttribute("data-zs-accent", "");   // purple / violet
+    });
+  }
+
+  // remember where you were in the chat list when you come back to it
+  const SCROLL_KEY = "zeta-skin-scroll:";
+  document.addEventListener("scroll", e => {
+    const t = e.target;
+    if (t instanceof Element && t.closest("#contents") && location.pathname.endsWith("/rooms")) {
+      try { sessionStorage.setItem(SCROLL_KEY + location.pathname, String(t.scrollTop)); } catch (er) {}
+    }
+  }, true);
+  function restoreScroll() {
+    if (!location.pathname.endsWith("/rooms")) return;
+    let y = 0; try { y = Number(sessionStorage.getItem(SCROLL_KEY + location.pathname)) || 0; } catch (e) {}
+    const sc = [...document.querySelectorAll("#contents .overflow-y-auto")].find(e => e.scrollHeight > e.clientHeight + 5);
+    if (y && sc && sc.scrollTop === 0) sc.scrollTop = y;
+  }
+
   function onPage() {
-    root.classList.toggle("zs-room", /\/rooms\/./.test(location.pathname));
-    tagRail(); tagFeeds(); layout();
+    tagRail(); tagFeeds(); tagRoom(); layout();
+    root.classList.toggle("zs-norail", !document.querySelector("[data-zs-rail]"));
   }
   setInterval(() => {
-    if (location.pathname !== lastPath) { lastPath = location.pathname; [100, 600, 1500].forEach(t => setTimeout(onPage, t)); }
-    else { tagRail(); tagFeeds(); }
+    if (location.pathname !== lastPath) {
+      lastPath = location.pathname;
+      [100, 600, 1500].forEach(t => setTimeout(onPage, t));
+      [700, 1600].forEach(t => setTimeout(restoreScroll, t));
+    } else onPage();
   }, 500);
   onPage(); draw(performance.now());
 })();
