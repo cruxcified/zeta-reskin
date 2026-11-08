@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Zeta Desktop Skin",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Full-width desktop layout for zeta-ai.io with a Three.js background and 3D character cards.",
   "content_scripts": [
     {
