@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zeta Desktop Skin
 // @namespace    zeta-desktop-skin
-// @version      0.7.1
+// @version      0.7.2
 // @description  Turns zeta-ai.io's phone-width view into a full-width desktop layout: nav rail, wide pages, adjustable text size, quiet Three.js background.
 // @match        https://zeta-ai.io/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
@@ -167,6 +167,7 @@
     background: var(--zs-panel); border: 1px solid var(--zs-line); border-radius: 14px; padding: 76px 12px 120px; box-sizing: border-box; z-index: 5;
     font: 14.5px/1.2 "Pretendard Variable", system-ui, sans-serif;
   }
+  #zs-rail-fallback a.zs-logo { padding: 0; background: none !important; color: var(--zs-text); }
   #zs-rail-fallback .zs-logo { position: absolute; top: 20px; left: 24px; font: 700 28px/1 "Pretendard Variable", system-ui, sans-serif; letter-spacing: -.03em; color: var(--zs-text); }
   #zs-rail-fallback a { color: var(--zs-muted); text-decoration: none; padding: 12px; border-radius: 10px; display: flex; gap: 12px; align-items: center; }
   #zs-rail-fallback a:hover { background: var(--zs-raised); color: var(--zs-text); }
@@ -317,13 +318,44 @@
       if (isRoom !== cell.hasAttribute("data-zs-roomcell")) cell.toggleAttribute("data-zs-roomcell", isRoom);
     }
   }
+  /* Backup for the rail buttons. Zeta's own click handling on its nav items doesn't fire in
+     some browsers (seen in Zen) once they sit in the rail. If a click on a rail item hasn't
+     changed the page shortly after, go there ourselves. */
+  const NAV_PATHS = { Home: "", Discover: "/discover", CreatorCenter: "/creator-center", Rooms: "/rooms", MyPage: "/my-page" };
+  function goTo(href) {
+    const from = location.href, router = window.next && window.next.router;
+    try { if (router && router.push) router.push(href); else throw 0; }
+    catch (er) { location.assign(href); return; }
+    setTimeout(() => { if (location.href === from) location.assign(href); }, 700);
+  }
+  window.addEventListener("click", e => {
+    if (!root.classList.contains("zs-wide")) return;
+    let item = e.target instanceof Element && e.target.closest('[id^="navigation-item-"]');
+    if (!item) {   // the click may have landed on something else drawn over the same spot
+      item = [...document.querySelectorAll('[data-zs-rail] [id^="navigation-item-"]')].find(el => {
+        const b = el.getBoundingClientRect();
+        return e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom;
+      });
+    }
+    if (!item) return;
+    const key = item.id.replace("navigation-item-", "");
+    if (!(key in NAV_PATHS)) return;
+    const locale = (location.pathname.match(/^\/([a-z]{2}(?:-[A-Za-z]{2})?)(?=\/|$)/) || [, "en"])[1];
+    const href = "/" + locale + NAV_PATHS[key];
+    if (location.pathname.replace(/\/$/, "") === href) return;
+    const from = location.href;
+    setTimeout(() => { if (location.href === from) goTo(href); }, 400);
+  }, true);
+
   /* stand-in rail: Zeta drops its nav inside a chat, so offer the way back */
   const fallback = document.createElement("nav"); fallback.id = "zs-rail-fallback"; fallback.setAttribute("aria-label", "Main");
-  fallback.innerHTML = `<span class="zs-logo">zeta</span><a href="/en/rooms" data-go>← All chats</a><a href="/en" data-go>Home</a>`;
+  fallback.innerHTML = `<a class="zs-logo" href="/en" data-go>zeta</a><a href="/en/rooms" data-go>← All chats</a><a href="/en" data-go>Home</a>`;
   fallback.addEventListener("click", e => {
     const a = e.target.closest("a[data-go]"); if (!a) return;
-    const router = window.next && window.next.router;   // stay inside Zeta's app instead of a full reload
-    if (router && router.push) { e.preventDefault(); router.push(a.getAttribute("href")); }
+    // Try Zeta's own router first (no full reload). If the page hasn't moved shortly after,
+    // as happens inside some chats, load the page normally instead.
+    e.preventDefault();
+    goTo(a.getAttribute("href"));
   });
   root.appendChild(fallback);
 
