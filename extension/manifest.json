@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Zeta Desktop Skin",
+  "version": "0.4.0",
+  "description": "Full-width desktop layout for zeta-ai.io with a Three.js background and 3D character cards.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://zeta-ai.io/*"
+      ],
+      "js": [
+        "three.min.js",
+        "skin.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "permissions": [
+    "alarms",
+    "storage"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zeta-desktop-skin@local",
+      "strict_min_version": "121.0"
+    }
+  }
+}
