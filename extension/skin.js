@@ -85,7 +85,7 @@
     width: 100% !important; height: auto !important; max-width: 100%; display: flex !important; justify-content: center;
   }
   html.zs-wide.zs-room #contents .mx-auto > button img {
-    width: auto !important; height: auto !important; max-width: 100% !important; max-height: 70vh;
+    width: auto !important; height: auto !important; max-width: 100% !important; max-height: calc(70vh / var(--zs-text-scale));
     object-fit: contain; border-radius: 12px; position: static !important;
   }
   html.zs-wide.zs-room [data-zs-composer] { margin-bottom: 12px !important; }
