@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zeta Desktop Skin
 // @namespace    zeta-desktop-skin
-// @version      0.6.0
+// @version      0.6.2
 // @description  Turns zeta-ai.io's phone-width view into a full-width desktop layout: nav rail, wide pages, adjustable text size, quiet Three.js background.
 // @match        https://zeta-ai.io/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
@@ -85,12 +85,26 @@
   html.zs-wide div:has(> a[href*="/plots/"]) { transition: transform .2s ease, box-shadow .2s ease; }
   html.zs-wide div:has(> a[href*="/plots/"]):hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.12); }
 
+  /* scrollbars: thin and grey instead of Zeta's purple (Firefox/Zen and Chrome) */
+  html.zs-wide, html.zs-wide * { scrollbar-color: #3a3a3c transparent !important; scrollbar-width: thin !important; }
+  html.zs-wide ::-webkit-scrollbar { width: 8px !important; height: 8px !important; background: transparent !important; }
+  html.zs-wide ::-webkit-scrollbar-thumb { background: #3a3a3c !important; border-radius: 4px !important; }
+  html.zs-wide ::-webkit-scrollbar-track { background: transparent !important; }
+
   /* chat pages: one readable column in the middle of the wide panel */
   html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
   html.zs-wide.zs-room [data-zs-composer] { max-width: 820px; margin-inline: auto !important; width: 100%; box-sizing: border-box; }
   html.zs-wide.zs-room #contents { line-height: 1.6; }
-  html.zs-wide.zs-room #contents .overflow-y-auto img:not([class*="rounded-full"]) {
-    max-height: 62vh; width: auto !important; max-width: 100%; object-fit: contain; border-radius: 12px; margin-inline: auto;
+  /* Pictures in a chat. Zeta sizes the picture box in pixels from the window width, which on a
+     desktop makes it far wider than the reading column, so the picture drifts right and gets cut off.
+     Size the box from the column instead and let the picture keep its own shape. */
+  html.zs-wide.zs-room #contents .mx-auto:has(> button img) { max-width: 100% !important; width: 100%; }
+  html.zs-wide.zs-room #contents .mx-auto > button:has(img) {
+    width: 100% !important; height: auto !important; max-width: 100%; display: flex !important; justify-content: center;
+  }
+  html.zs-wide.zs-room #contents .mx-auto > button img {
+    width: auto !important; height: auto !important; max-width: 100% !important; max-height: calc(70vh / var(--zs-text-scale));
+    object-fit: contain; border-radius: 12px; position: static !important;
   }
   html.zs-wide.zs-room [data-zs-composer] { margin-bottom: 12px !important; }
   html.zs-wide.zs-room [data-zs-composer] textarea, html.zs-wide.zs-room [data-zs-composer] input { color: var(--zs-text); }
