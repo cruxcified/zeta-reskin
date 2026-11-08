@@ -71,7 +71,7 @@
   html.zs-wide #contents > div > div > div > div.pointer-events-none { display: none; }
 
   /* text size: scales Zeta's page content, not the rail */
-  html.zs-wide #contents > div > :not([data-zs-navwrap]) { zoom: var(--zs-text-scale); }
+  html.zs-wide #contents > div > :not([data-zs-navwrap]):not([data-zs-rail]) { zoom: var(--zs-text-scale); }
 
   /* card feeds: each row of 2 cards is its own block, so let the rows sit side by side */
   html.zs-wide div:has(> div li > div > a[href*="/plots/"]) { flex-flow: row wrap !important; column-gap: 14px; align-items: flex-start; }
@@ -111,6 +111,8 @@
   /* pop-ups stay phone-sized and centred on the screen */
   html.zs-wide #portal-container { left: 0 !important; right: 0 !important; width: 100vw !important; }
   html.zs-wide #portal-container > .z-30 { inset: 0 !important; }
+  html.zs-wide #portal-container > .z-30 > * { max-width: min(480px, 92vw); max-height: 92vh; }
+  html.zs-wide #portal-container > .z-30 img { max-height: 70vh; width: auto; max-width: 100%; object-fit: contain; }
 
   /* rail controls */
   #zs-controls { display: none; }
