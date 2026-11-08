@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zeta Desktop Skin
 // @namespace    zeta-desktop-skin
-// @version      0.6.1
+// @version      0.6.2
 // @description  Turns zeta-ai.io's phone-width view into a full-width desktop layout: nav rail, wide pages, adjustable text size, quiet Three.js background.
 // @match        https://zeta-ai.io/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
@@ -84,6 +84,12 @@
   html.zs-wide [data-zs-row] li { gap: 14px !important; }
   html.zs-wide div:has(> a[href*="/plots/"]) { transition: transform .2s ease, box-shadow .2s ease; }
   html.zs-wide div:has(> a[href*="/plots/"]):hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.12); }
+
+  /* scrollbars: thin and grey instead of Zeta's purple (Firefox/Zen and Chrome) */
+  html.zs-wide, html.zs-wide * { scrollbar-color: #3a3a3c transparent !important; scrollbar-width: thin !important; }
+  html.zs-wide ::-webkit-scrollbar { width: 8px !important; height: 8px !important; background: transparent !important; }
+  html.zs-wide ::-webkit-scrollbar-thumb { background: #3a3a3c !important; border-radius: 4px !important; }
+  html.zs-wide ::-webkit-scrollbar-track { background: transparent !important; }
 
   /* chat pages: one readable column in the middle of the wide panel */
   html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
