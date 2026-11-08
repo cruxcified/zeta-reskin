@@ -75,11 +75,12 @@
   html.zs-wide #contents .overflow-y-auto > :not(.overflow-y-auto .overflow-y-auto > *) { zoom: var(--zs-text-scale); }
   html.zs-wide #contents textarea { font-size: calc(16px * var(--zs-text-scale)) !important; }
 
-  /* card feeds: each row of 2 cards is its own block, so let the rows sit side by side */
-  html.zs-wide div:has(> div li > div > a[href*="/plots/"]) { flex-flow: row wrap !important; column-gap: 14px; align-items: flex-start; }
-  html.zs-wide div:has(> div li > div > a[href*="/plots/"]) > div { flex: 1 0 100%; min-width: 0; }
-  html.zs-wide div:has(> div li > div > a[href*="/plots/"]) > div:has(li > div > a[href*="/plots/"]) { flex: 1 1 340px; }
-  html.zs-wide li:has(> div > a[href*="/plots/"]) { gap: 14px !important; }
+  /* card feeds: each row of 2 cards is its own block, so let the rows sit side by side
+     (the feed and its rows are tagged from JS; a CSS-only :has() match also caught the page's scroll areas) */
+  html.zs-wide [data-zs-feed] { flex-flow: row wrap !important; column-gap: 14px; align-items: flex-start; }
+  html.zs-wide [data-zs-feed] > * { flex: 1 0 100%; min-width: 0; }
+  html.zs-wide [data-zs-feed] > [data-zs-row] { flex: 1 1 340px; }
+  html.zs-wide [data-zs-row] li { gap: 14px !important; }
   html.zs-wide div:has(> a[href*="/plots/"]) { transition: transform .2s ease, box-shadow .2s ease; }
   html.zs-wide div:has(> a[href*="/plots/"]):hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.12); }
 
@@ -232,13 +233,23 @@
 
   /* ---------------- keep up with Zeta's page changes ---------------- */
   let lastPath = "";
+  function tagFeeds() {
+    document.querySelectorAll("li:has(> div > a[href*='/plots/'])").forEach(li => {
+      // climb to the block that holds just this row, then its parent is the feed
+      let row = li;
+      while (row.parentElement && row.parentElement.children.length === 1 && row.parentElement.id !== "contents") row = row.parentElement;
+      const feed = row.parentElement;
+      if (!feed || feed.id === "contents" || feed.classList.contains("overflow-y-auto")) return;
+      row.setAttribute("data-zs-row", ""); feed.setAttribute("data-zs-feed", "");
+    });
+  }
   function onPage() {
     root.classList.toggle("zs-room", /\/rooms\/./.test(location.pathname));
-    tagRail(); layout();
+    tagRail(); tagFeeds(); layout();
   }
   setInterval(() => {
     if (location.pathname !== lastPath) { lastPath = location.pathname; [100, 600, 1500].forEach(t => setTimeout(onPage, t)); }
-    else tagRail();
+    else { tagRail(); tagFeeds(); }
   }, 500);
   onPage(); draw(performance.now());
 })();
