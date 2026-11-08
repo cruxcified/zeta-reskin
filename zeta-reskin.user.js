@@ -138,8 +138,10 @@
     document.querySelectorAll("[data-zs-rail]").forEach(e => e.removeAttribute("data-zs-rail"));
     document.querySelectorAll("[data-zs-navwrap]").forEach(e => e.removeAttribute("data-zs-navwrap"));
     row.setAttribute("data-zs-rail", "");
-    // only collapse the wrapper when it holds nothing but the nav and its decoration
-    if (wrap && wrap !== document.body && wrap.id !== "contents" && !wrap.querySelector("a[href], li, textarea, input")) wrap.setAttribute("data-zs-navwrap", "");
+    // Some pages wrap the nav in a box with decorative images; others put it straight into the
+    // page column. Only collapse the wrapper when everything else in it is decoration.
+    const decorOnly = wrap && [...wrap.children].every(c => c === row || c.classList.contains("pointer-events-none"));
+    if (decorOnly && wrap !== document.body && wrap.id !== "contents") wrap.setAttribute("data-zs-navwrap", "");
   }
 
   /* ---------------- controls ---------------- */
