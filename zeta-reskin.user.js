@@ -71,7 +71,9 @@
   html.zs-wide #contents > div > div > div > div.pointer-events-none { display: none; }
 
   /* text size: scales Zeta's page content, not the rail */
-  html.zs-wide #contents > div > :not([data-zs-navwrap]):not([data-zs-rail]) { zoom: var(--zs-text-scale); }
+  /* zoom what's inside each scrolling area (not the area itself), so pages still fit and scroll to the end */
+  html.zs-wide #contents .overflow-y-auto > :not(.overflow-y-auto .overflow-y-auto > *) { zoom: var(--zs-text-scale); }
+  html.zs-wide #contents textarea { font-size: calc(16px * var(--zs-text-scale)) !important; }
 
   /* card feeds: each row of 2 cards is its own block, so let the rows sit side by side */
   html.zs-wide div:has(> div li > div > a[href*="/plots/"]) { flex-flow: row wrap !important; column-gap: 14px; align-items: flex-start; }
