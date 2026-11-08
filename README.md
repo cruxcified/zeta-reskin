@@ -4,9 +4,10 @@ A desktop layout for [zeta-ai.io](https://zeta-ai.io). It changes nothing on Zet
 
 - Zeta's bottom nav becomes a rail on the left
 - The feed widens to fill the screen
-- The character you hover over shows up on the right as a 3D card that tilts with your mouse
-- A Three.js background picks up colours from that character
-- A Full / Calm / Off switch controls the effects, and the animation pauses in background tabs
+- Grey/black palette with a quiet Three.js particle background
+- Text size control (100 to 145%) in the rail, remembered per browser
+- Chat pages keep a readable column in the middle
+- A Full / Calm / Off switch controls the background, and the animation pauses in background tabs
 
 It only switches on when the window is at least 1100px wide. Narrower windows get Zeta's normal view.
 
