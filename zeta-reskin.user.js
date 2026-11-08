@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zeta Desktop Skin
 // @namespace    zeta-desktop-skin
-// @version      0.6.2
+// @version      0.7.0
 // @description  Turns zeta-ai.io's phone-width view into a full-width desktop layout: nav rail, wide pages, adjustable text size, quiet Three.js background.
 // @match        https://zeta-ai.io/*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
@@ -14,7 +14,7 @@
 /* Layout (window 1100px wide or more):  nav rail | Zeta's page, widened
  *  - Zeta's own nav buttons are moved into a fixed rail on the left; they work as normal.
  *  - Card feeds wrap several rows side by side instead of 2 cards per row.
- *  - Inside a chat: a ~820px reading column, message box to match, images capped, grey accents,
+ *  - Inside a chat: a ~960px reading column, message box to match, images capped, grey accents,
  *    and a stand-in rail (Zeta hides its nav there). The chat list remembers its scroll position.
  *  - Text size: 100 / 115 / 130 / 145 %, saved per browser.
  *  - Neutral grey/black palette. Three.js background of slow grey particles.
@@ -91,9 +91,28 @@
   html.zs-wide ::-webkit-scrollbar-thumb { background: #3a3a3c !important; border-radius: 4px !important; }
   html.zs-wide ::-webkit-scrollbar-track { background: transparent !important; }
 
+  /* chat list: Zeta keeps swipe buttons (pin / delete) just past each row's right edge, in purple.
+     The phone screen hides them; on the wide panel they showed as a purple bar. Clip them again. */
+  html.zs-wide :has(> div[class*="translate-x-full"][class*="inset-y-0"]) { overflow: hidden !important; }
+  /* chat list as a grid of cards that fills the panel (list and cards are tagged from JS) */
+  html.zs-wide [data-zs-roomgrid] {
+    display: grid !important; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px 14px; align-content: start; padding-block: 6px;
+  }
+  html.zs-wide [data-zs-roomgrid] > * { grid-column: 1 / -1; min-width: 0; }
+  html.zs-wide [data-zs-roomgrid] > [data-zs-roomcell] {
+    grid-column: auto; overflow: hidden; border-radius: 14px; background: var(--zs-raised); border: 1px solid var(--zs-line);
+    transition: border-color .15s ease, background-color .15s ease;
+  }
+  html.zs-wide [data-zs-roomgrid] > [data-zs-roomcell]:hover { border-color: #3a3a3c; background: #222224; }
+  html.zs-wide [data-zs-roomcell] div[class*="min-w-[215px]"] { padding: 14px 16px !important; gap: 16px !important; }
+  html.zs-wide [data-zs-roomcell] div[class*="min-w-[215px]"] > div { gap: 16px !important; }
+  html.zs-wide [data-zs-roomcell] img[class*="w-[42px]"] { width: 66px !important; height: 88px !important; border-radius: 10px !important; }
+  html.zs-wide [data-zs-roomcell] .body1 { font-size: 17px !important; line-height: 1.35 !important; }
+  html.zs-wide [data-zs-roomcell] .body2 { font-size: 14.5px !important; line-height: 1.45 !important; -webkit-line-clamp: 2 !important; }
+
   /* chat pages: one readable column in the middle of the wide panel */
   html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
-  html.zs-wide.zs-room [data-zs-composer] { max-width: 820px; margin-inline: auto !important; width: 100%; box-sizing: border-box; }
+  html.zs-wide.zs-room [data-zs-composer] { max-width: 960px; margin-inline: auto !important; width: 100%; box-sizing: border-box; }
   html.zs-wide.zs-room #contents { line-height: 1.6; }
   /* Pictures in a chat. Zeta sizes the picture box in pixels from the window width, which on a
      desktop makes it far wider than the reading column, so the picture drifts right and gets cut off.
@@ -279,6 +298,22 @@
       row.setAttribute("data-zs-row", ""); feed.setAttribute("data-zs-feed", "");
     });
   }
+  // chat list: find the list that holds the chat rows and tag each chat as a card
+  function tagRoomList() {
+    const rows = [...document.querySelectorAll('#contents div[class*="min-w-[215px]"]')];
+    if (rows.length < 2) return;
+    let list = rows[0].parentElement;
+    while (list && list.id !== "contents" && !rows.every(r => list.contains(r))) list = list.parentElement;
+    if (!list || list.id === "contents" || list.classList.contains("overflow-y-auto")) return;
+    if (!list.hasAttribute("data-zs-roomgrid")) {
+      document.querySelectorAll("[data-zs-roomgrid]").forEach(x => x.removeAttribute("data-zs-roomgrid"));
+      list.setAttribute("data-zs-roomgrid", "");
+    }
+    for (const cell of list.children) {
+      const isRoom = !!cell.querySelector('div[class*="min-w-[215px]"]');
+      if (isRoom !== cell.hasAttribute("data-zs-roomcell")) cell.toggleAttribute("data-zs-roomcell", isRoom);
+    }
+  }
   /* stand-in rail: Zeta drops its nav inside a chat, so offer the way back */
   const fallback = document.createElement("nav"); fallback.id = "zs-rail-fallback"; fallback.setAttribute("aria-label", "Main");
   fallback.innerHTML = `<span class="zs-logo">zeta</span><a href="/en/rooms" data-go>← All chats</a><a href="/en" data-go>Home</a>`;
@@ -324,7 +359,7 @@
   }
 
   function onPage() {
-    tagRail(); tagFeeds(); tagRoom(); layout();
+    tagRail(); tagFeeds(); tagRoomList(); tagRoom(); layout();
     root.classList.toggle("zs-norail", !document.querySelector("[data-zs-rail]"));
   }
   setInterval(() => {
