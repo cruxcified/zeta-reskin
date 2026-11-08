@@ -2,7 +2,7 @@
 /* Layout (window 1100px wide or more):  nav rail | Zeta's page, widened
  *  - Zeta's own nav buttons are moved into a fixed rail on the left; they work as normal.
  *  - Card feeds wrap several rows side by side instead of 2 cards per row.
- *  - Inside a chat: a ~960px reading column, message box to match, images capped, grey accents,
+ *  - Inside a chat: messages, header and message box use the full panel width, images capped, grey accents,
  *    and a stand-in rail (Zeta hides its nav there). The chat list remembers its scroll position.
  *  - Text size: 100 / 115 / 130 / 145 %, saved per browser.
  *  - Neutral grey/black palette. Three.js background of slow grey particles.
@@ -98,9 +98,12 @@
   html.zs-wide [data-zs-roomcell] .body1 { font-size: 17px !important; line-height: 1.35 !important; }
   html.zs-wide [data-zs-roomcell] .body2 { font-size: 14.5px !important; line-height: 1.45 !important; -webkit-line-clamp: 2 !important; }
 
-  /* chat pages: one readable column in the middle of the wide panel */
+  /* chat pages: messages use the whole panel */
   html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
-  html.zs-wide.zs-room [data-zs-composer] { max-width: 960px; margin-inline: auto !important; width: 100%; box-sizing: border-box; }
+  html.zs-wide.zs-room [data-zs-composer] { max-width: none !important; margin-inline: 0 !important; width: 100%; box-sizing: border-box; }
+  /* Zeta caps its chat header, message list and message dock at 1120px; let them use the whole panel */
+  html.zs-wide.zs-room [class*="max-w-[1120px]"] { max-width: none !important; }
+  html.zs-wide.zs-room #contents .overflow-y-auto { padding-inline: 32px !important; }
   html.zs-wide.zs-room #contents { line-height: 1.6; }
   /* Pictures in a chat. Zeta sizes the picture box in pixels from the window width, which on a
      desktop makes it far wider than the reading column, so the picture drifts right and gets cut off.
