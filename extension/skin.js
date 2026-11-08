@@ -116,7 +116,7 @@
     width: auto !important; height: auto !important; max-width: 100% !important; max-height: calc(70vh / var(--zs-text-scale));
     object-fit: contain; border-radius: 12px; position: static !important;
   }
-  html.zs-wide.zs-room [data-zs-composer] { margin-bottom: 12px !important; }
+  html.zs-wide.zs-room [data-zs-composer] { margin-bottom: 0 !important; transform: translateY(8px); }
   html.zs-wide.zs-room [data-zs-composer] textarea, html.zs-wide.zs-room [data-zs-composer] input { color: var(--zs-text); }
   /* Zeta's purple accents (your message bubbles, send button) in neutral grey */
   html.zs-wide [data-zs-accent] { background-color: #3a3a3c !important; border-color: #4a4a4d !important; color: var(--zs-text) !important; }
