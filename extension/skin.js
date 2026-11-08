@@ -306,6 +306,35 @@
       if (isRoom !== cell.hasAttribute("data-zs-roomcell")) cell.toggleAttribute("data-zs-roomcell", isRoom);
     }
   }
+  /* Backup for the rail buttons. Zeta's own click handling on its nav items doesn't fire in
+     some browsers (seen in Zen) once they sit in the rail. If a click on a rail item hasn't
+     changed the page shortly after, go there ourselves. */
+  const NAV_PATHS = { Home: "", Discover: "/discover", CreatorCenter: "/creator-center", Rooms: "/rooms", MyPage: "/my-page" };
+  function goTo(href) {
+    const from = location.href, router = window.next && window.next.router;
+    try { if (router && router.push) router.push(href); else throw 0; }
+    catch (er) { location.assign(href); return; }
+    setTimeout(() => { if (location.href === from) location.assign(href); }, 700);
+  }
+  window.addEventListener("click", e => {
+    if (!root.classList.contains("zs-wide")) return;
+    let item = e.target instanceof Element && e.target.closest('[id^="navigation-item-"]');
+    if (!item) {   // the click may have landed on something else drawn over the same spot
+      item = [...document.querySelectorAll('[data-zs-rail] [id^="navigation-item-"]')].find(el => {
+        const b = el.getBoundingClientRect();
+        return e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom;
+      });
+    }
+    if (!item) return;
+    const key = item.id.replace("navigation-item-", "");
+    if (!(key in NAV_PATHS)) return;
+    const locale = (location.pathname.match(/^\/([a-z]{2}(?:-[A-Za-z]{2})?)(?=\/|$)/) || [, "en"])[1];
+    const href = "/" + locale + NAV_PATHS[key];
+    if (location.pathname.replace(/\/$/, "") === href) return;
+    const from = location.href;
+    setTimeout(() => { if (location.href === from) goTo(href); }, 400);
+  }, true);
+
   /* stand-in rail: Zeta drops its nav inside a chat, so offer the way back */
   const fallback = document.createElement("nav"); fallback.id = "zs-rail-fallback"; fallback.setAttribute("aria-label", "Main");
   fallback.innerHTML = `<a class="zs-logo" href="/en" data-go>zeta</a><a href="/en/rooms" data-go>← All chats</a><a href="/en" data-go>Home</a>`;
@@ -314,11 +343,7 @@
     // Try Zeta's own router first (no full reload). If the page hasn't moved shortly after,
     // as happens inside some chats, load the page normally instead.
     e.preventDefault();
-    const href = a.getAttribute("href"), from = location.href;
-    const router = window.next && window.next.router;
-    try { if (router && router.push) router.push(href); else throw 0; }
-    catch (er) { location.assign(href); return; }
-    setTimeout(() => { if (location.href === from) location.assign(href); }, 700);
+    goTo(a.getAttribute("href"));
   });
   root.appendChild(fallback);
 
