@@ -98,6 +98,19 @@
   html.zs-wide [data-zs-roomcell] .body1 { font-size: 17px !important; line-height: 1.35 !important; }
   html.zs-wide [data-zs-roomcell] .body2 { font-size: 14.5px !important; line-height: 1.45 !important; -webkit-line-clamp: 2 !important; }
 
+  /* Zeta's bottom sheets (message menu, sort options, ...) span the whole page width, so the left
+     part ended up under the rail. On the wide layout they open as a drawer on the right instead. */
+  html.zs-wide .absolute.z-50:has(> [class*="mt-auto"][class*="rounded-b-none"]) { align-items: flex-end !important; }
+  html.zs-wide .absolute.z-50 > [class*="mt-auto"][class*="rounded-b-none"] {
+    width: 420px !important; max-width: calc(100% - 24px) !important; height: calc(100% - 24px) !important; max-height: none !important;
+    margin: 12px 12px 12px auto !important; border-radius: 16px !important; overflow: hidden;
+    border: 1px solid var(--zs-line); background: var(--zs-panel) !important; box-shadow: -24px 0 60px -20px rgba(0,0,0,.8) !important;
+    transform: none !important; animation: zs-drawer-in .22s cubic-bezier(.2,.8,.2,1);
+  }
+  html.zs-wide .absolute.z-50 > [class*="mt-auto"][class*="rounded-b-none"] [class*="rounded-t-"] { border-radius: 0 !important; }
+  @keyframes zs-drawer-in { from { translate: 48px 0; } to { translate: 0 0; } }
+  @media (prefers-reduced-motion: reduce) { html.zs-wide .absolute.z-50 > [class*="mt-auto"][class*="rounded-b-none"] { animation: none; } }
+
   /* chat pages: messages use the whole panel */
   html.zs-wide.zs-room #contents .overflow-y-auto > :not(#contents .overflow-y-auto .overflow-y-auto > *),
   html.zs-wide.zs-room [data-zs-composer] { max-width: none !important; margin-inline: 0 !important; width: 100%; box-sizing: border-box; }
